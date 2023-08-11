@@ -1,0 +1,4 @@
+{
+  "cSpell.words": ["omic", "pipewire"],
+  "rust-analyzer.linkedProjects": ["./omic/Cargo.toml"]
+}
