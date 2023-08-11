@@ -57,7 +57,7 @@ pub fn get_pw_params<'a>() -> Vec<&'a Pod> {
 
 pub fn create_stream(core: &pipewire::Core) -> Result<Stream, anyhow::Error> {
     Ok(Stream::new(
-        &core,
+        core,
         "omic",
         properties! {
             *pipewire::keys::MEDIA_CLASS => "Audio/Source",
@@ -85,7 +85,7 @@ pub fn register_callbacks(
 
 fn process_callback(buffer: &mut Buffer, ctx: &mut PwContext) {
     let data = buffer.datas_mut().first_mut().unwrap();
-    let stride = std::mem::size_of::<i16>() * 1;
+    let stride = std::mem::size_of::<i16>();
     let chunk = data.chunk_mut();
 
     *chunk.offset_mut() = 0;
