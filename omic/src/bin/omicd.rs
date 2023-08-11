@@ -49,7 +49,7 @@ async fn main() -> Result<(), anyhow::Error> {
                     tracing::info!("attempting to connect to {}:{}", address, port);
                     let addr = format!("{}:{}", address, port);
 
-                    socket.connect(addr.clone())?;
+                    socket.connect(addr)?;
                     socket.send(&[UdpSocketMessage::Connect as u8])?;
                 }
                 Message::Disconnect => {
