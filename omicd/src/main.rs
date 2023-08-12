@@ -65,6 +65,7 @@ async fn main() -> Result<(), anyhow::Error> {
                 }
                 // TODO: add current state query
                 Request::Query => todo!(),
+                Request::Noop => {}
             }
 
             Ok(())

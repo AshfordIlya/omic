@@ -1,6 +1,11 @@
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Default)]
 pub enum Request {
-    Connect { address: String, port: String },
+    #[default]
+    Noop,
+    Connect {
+        address: String,
+        port: String,
+    },
     Disconnect,
     Query,
 }

@@ -12,6 +12,7 @@ libspa = { git = "https://gitlab.freedesktop.org/pipewire/pipewire-rs.git" }
 pipewire = { git = "https://gitlab.freedesktop.org/pipewire/pipewire-rs.git" }
 rand = "0.8.5"
 serde = { version = "1.0.183", features = ["derive"] }
+thiserror = "1.0.44"
 tokio = { version = "1.30.0", features = ["rt-multi-thread", "macros"] }
 tracing = "0.1.37"
 tracing-journald = "0.3.0"

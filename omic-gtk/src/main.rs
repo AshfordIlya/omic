@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use gtk::{prelude::*, Entry, ListBox};
 use gtk::{Application, ApplicationWindow, Button};
 use gtk4 as gtk;
@@ -37,10 +35,11 @@ fn main() -> Result<(), anyhow::Error> {
 
         button.connect_clicked(move |button| {
             // TODO: handle error with popup
-            let mut unix_socket = omic::socket::connect().unwrap();
             if button.label() == Some("Disconnect".into()) {
-                let buffer = bincode::serialize(&Request::Disconnect).unwrap();
-                unix_socket.write_all(&buffer).unwrap();
+                omic::socket::Socket::create_request()
+                    .request(Request::Disconnect)
+                    .send()
+                    .unwrap();
                 button.set_label("Connect");
                 return;
             }
@@ -48,9 +47,10 @@ fn main() -> Result<(), anyhow::Error> {
             let address = address_text_box.text().as_str().to_owned();
             let port = port_text_box.text().as_str().to_owned();
 
-            let buffer = bincode::serialize(&Request::Connect { address, port }).unwrap();
-            unix_socket.write_all(&buffer).unwrap();
-
+            omic::socket::Socket::create_request()
+                .request(Request::Connect { address, port })
+                .send()
+                .unwrap();
             button.set_label("Disconnect");
         });
 
