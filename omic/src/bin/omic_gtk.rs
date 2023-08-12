@@ -36,6 +36,7 @@ fn main() -> Result<(), anyhow::Error> {
         content_box.append(&button);
 
         button.connect_clicked(move |button| {
+            // TODO: handle error with popup
             let mut unix_socket = omic::socket::connect().unwrap();
             if button.label() == Some("Disconnect".into()) {
                 let buffer = bincode::serialize(&Request::Disconnect).unwrap();
