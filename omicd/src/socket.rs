@@ -84,8 +84,8 @@ pub fn bind() -> Result<UnixListener, anyhow::Error> {
     let path = SOCKET_PATH.to_owned();
 
     if Path::new(&path).exists() {
+        tracing::info!("socket already exists, removing");
         std::fs::remove_file(&path)?;
-        tracing::info!("socket already existed, removed");
     }
 
     Ok(UnixListener::bind(path)?)
