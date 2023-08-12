@@ -54,10 +54,10 @@ fn main() -> Result<(), anyhow::Error> {
 
     let context = pipewire::Context::new(&main_loop)?;
     let core = context.connect(None)?;
-    let socket = Arc::new(UdpSocket::bind("0.0.0.0:0").context("couldn't bind to address")?);
-    socket.set_nonblocking(true)?;
+    let udp_socket = Arc::new(UdpSocket::bind("0.0.0.0:0").context("couldn't bind to address")?);
+    udp_socket.set_nonblocking(true)?;
     let ctx = PipewireContext {
-        socket: Arc::clone(&socket),
+        socket: Arc::clone(&udp_socket),
     };
 
     let stream = omic::pipewire::create_stream(&core)?;
@@ -75,13 +75,13 @@ fn main() -> Result<(), anyhow::Error> {
                     tracing::info!("attempting to connect to {}:{}", address, port);
                     let addr = format!("{}:{}", address, port);
 
-                    socket.connect(addr)?;
-                    socket.send(&[UdpSocketMessage::Connect as u8])?;
+                    udp_socket.connect(addr)?;
+                    udp_socket.send(&[UdpSocketMessage::Connect as u8])?;
                     tracing::info!("connection established, connect byte sent");
                 }
                 Request::Disconnect => {
                     tracing::info!("sending disconnect signal");
-                    socket.send(&[UdpSocketMessage::Disconnect as u8])?;
+                    udp_socket.send(&[UdpSocketMessage::Disconnect as u8])?;
                 }
                 // TODO: add current state query
                 Request::Query => todo!(),
