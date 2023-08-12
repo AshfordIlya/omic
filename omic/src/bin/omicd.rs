@@ -57,11 +57,7 @@ async fn main() -> Result<(), anyhow::Error> {
 
                     socket.connect(addr)?;
                     socket.send(&[UdpSocketMessage::Connect as u8])?;
-                    tracing::info!(
-                        "connection established, connect byte sent {}:{}",
-                        address,
-                        port
-                    );
+                    tracing::info!("connection established, connect byte sent");
                 }
                 Request::Disconnect => {
                     tracing::info!("sending disconnect signal");
