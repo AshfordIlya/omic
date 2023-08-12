@@ -5,7 +5,7 @@ use omic::{
     message::{Request, Response},
     pipewire::{get_pw_params, PipewireContext},
 };
-use pipewire::{MainLoop, Signal};
+use pipewire::{MainLoop, Signal, WeakMainLoop};
 use std::{
     io::{Read, Write},
     mem::ManuallyDrop,
@@ -31,6 +31,27 @@ fn main() -> Result<(), anyhow::Error> {
     pipewire::init();
 
     let main_loop = MainLoop::new()?;
+    let close = |main_loop_weak: &WeakMainLoop| {
+        match omic::socket::disconnect() {
+            Ok(_) => {}
+            Err(e) => {
+                tracing::error!("error disconnecting from socket: {}", e)
+            }
+        };
+
+        tracing::info!("omicd: disconnected");
+
+        if let Some(main_loop) = main_loop_weak.upgrade() {
+            main_loop.quit();
+        }
+    };
+
+    // this has to be done before passing to context
+    let main_loop_weak = main_loop.downgrade();
+    let _sig = main_loop.add_signal_local(Signal::SIGINT, move || close(&main_loop_weak));
+    let main_loop_weak = main_loop.downgrade();
+    let _sig = main_loop.add_signal_local(Signal::SIGTERM, move || close(&main_loop_weak));
+
     let context = pipewire::Context::new(&main_loop)?;
     let core = context.connect(None)?;
     let socket = Arc::new(UdpSocket::bind("0.0.0.0:0").context("couldn't bind to address")?);
@@ -79,23 +100,6 @@ fn main() -> Result<(), anyhow::Error> {
                     stream.write_all(&bincode::serialize(&Response::Error(error)).unwrap())
                 }
             };
-        }
-    });
-
-    // TODO: ???
-    let main_loop_weak = main_loop.downgrade();
-    let _sig = main_loop.add_signal_local(Signal::SIGINT, move || {
-        match omic::socket::disconnect() {
-            Ok(_) => {}
-            Err(e) => {
-                tracing::error!("error disconnecting from socket: {}", e)
-            }
-        };
-
-        tracing::info!("omicd: disconnected");
-
-        if let Some(main_loop) = main_loop_weak.upgrade() {
-            main_loop.quit();
         }
     });
 
