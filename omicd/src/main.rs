@@ -39,11 +39,11 @@ fn main() -> Result<(), anyhow::Error> {
             }
         };
 
-        tracing::info!("omicd: disconnected");
-
+        tracing::info!("disconnected");
         if let Some(main_loop) = main_loop_weak.upgrade() {
             main_loop.quit();
         }
+        tracing::info!("main loop finished");
     };
 
     // this has to be done before passing to context
