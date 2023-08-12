@@ -31,7 +31,7 @@ fn main() -> Result<(), anyhow::Error> {
     pipewire::init();
 
     let main_loop = MainLoop::new()?;
-    let close = |main_loop_weak: &WeakMainLoop| {
+    let exit = |main_loop_weak: &WeakMainLoop| {
         match omic::socket::disconnect() {
             Ok(_) => {}
             Err(e) => {
@@ -48,9 +48,9 @@ fn main() -> Result<(), anyhow::Error> {
 
     // this has to be done before passing to context
     let main_loop_weak = main_loop.downgrade();
-    let _sig = main_loop.add_signal_local(Signal::SIGINT, move || close(&main_loop_weak));
+    let _sig = main_loop.add_signal_local(Signal::SIGINT, move || exit(&main_loop_weak));
     let main_loop_weak = main_loop.downgrade();
-    let _sig = main_loop.add_signal_local(Signal::SIGTERM, move || close(&main_loop_weak));
+    let _sig = main_loop.add_signal_local(Signal::SIGTERM, move || exit(&main_loop_weak));
 
     let context = pipewire::Context::new(&main_loop)?;
     let core = context.connect(None)?;
