@@ -33,3 +33,12 @@ impl Request {
             .deserialize(bytes)
     }
 }
+
+impl Response {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, bincode::Error> {
+        bincode::DefaultOptions::new()
+            .with_limit(MAX_MESSAGE_SIZE as u64)
+            .allow_trailing_bytes()
+            .deserialize(bytes)
+    }
+}

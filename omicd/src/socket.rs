@@ -59,7 +59,7 @@ impl SocketRequestBuilder {
         let mut buffer = [0; MAX_MESSAGE_SIZE];
         stream.recv(&mut buffer)?;
 
-        let response = bincode::deserialize(&buffer)?;
+        let response = Response::from_bytes(&buffer)?;
 
         Ok(response)
     }
