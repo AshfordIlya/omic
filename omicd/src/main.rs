@@ -15,8 +15,7 @@ use std::{
 };
 use tracing_subscriber::prelude::*;
 
-#[tokio::main]
-async fn main() -> Result<(), anyhow::Error> {
+fn main() -> Result<(), anyhow::Error> {
     let registry =
         tracing_subscriber::registry().with(tracing_subscriber::fmt::layer().with_target(false));
     match tracing_journald::layer() {
