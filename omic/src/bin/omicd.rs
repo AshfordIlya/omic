@@ -67,6 +67,8 @@ async fn main() -> Result<(), anyhow::Error> {
                     tracing::info!("sending disconnect signal");
                     socket.send(&[UdpSocketMessage::Disconnect as u8])?;
                 }
+                // TODO: add current state query
+                Request::Query => todo!(),
             }
 
             Ok(())
