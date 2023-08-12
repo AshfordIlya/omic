@@ -1,6 +1,11 @@
 #[derive(serde::Serialize, serde::Deserialize)]
-pub enum Message {
+pub enum Request {
     Connect { address: String, port: String },
     Disconnect,
+}
+
+#[derive(serde::Serialize, serde::Deserialize)]
+pub enum Response {
+    Ok,
     Error(String),
 }

@@ -2,11 +2,17 @@ use anyhow::Context;
 use libspa::{flags::IoFlags, Direction};
 use omic::{
     constants::UdpSocketMessage,
-    message::Message,
+    message::{Request, Response},
     pw::{get_pw_params, PwContext},
 };
 use pipewire::{MainLoop, Signal};
-use std::{io::Read, mem::ManuallyDrop, net::UdpSocket, os::unix::net::UnixStream, sync::Arc};
+use std::{
+    io::{Read, Write},
+    mem::ManuallyDrop,
+    net::UdpSocket,
+    os::unix::net::UnixStream,
+    sync::Arc,
+};
 use tracing_subscriber::prelude::*;
 
 #[tokio::main]
@@ -42,38 +48,39 @@ async fn main() -> Result<(), anyhow::Error> {
         let closure = |stream: &mut UnixStream| -> Result<(), anyhow::Error> {
             let mut bytes = Vec::new();
             stream.read_to_end(&mut bytes)?;
-            let message: Message = bincode::deserialize(&bytes)?;
+            let message: Request = bincode::deserialize(&bytes)?;
 
             match message {
-                Message::Connect { address, port } => {
+                Request::Connect { address, port } => {
                     tracing::info!("attempting to connect to {}:{}", address, port);
                     let addr = format!("{}:{}", address, port);
 
                     socket.connect(addr)?;
                     socket.send(&[UdpSocketMessage::Connect as u8])?;
+                    tracing::info!(
+                        "connection established, connect byte sent {}:{}",
+                        address,
+                        port
+                    );
                 }
-                Message::Disconnect => {
+                Request::Disconnect => {
                     tracing::info!("sending disconnect signal");
                     socket.send(&[UdpSocketMessage::Disconnect as u8])?;
                 }
-                Message::Error(_) => unreachable!(),
             }
 
             Ok(())
         };
 
-        if let Ok(mut stream) = unix_socket.accept() {
-            match closure(&mut stream.0) {
-                Ok(_) => {}
+        if let Ok((mut stream, _)) = unix_socket.accept() {
+            let _ = match closure(&mut stream) {
+                Ok(_) => stream.write_all(&bincode::serialize(&Response::Ok).unwrap()),
                 Err(e) => {
                     let error = format!("error occurred reading from unix socket: {}", e);
                     tracing::error!(error);
-                    // TODO: reply with error
-                    // let _res = stream
-                    //     .0
-                    //     .write_all(&bincode::serialize(&Message::Error(error)).unwrap_or_default());
+                    stream.write_all(&bincode::serialize(&Response::Error(error)).unwrap())
                 }
-            }
+            };
         }
     });
 

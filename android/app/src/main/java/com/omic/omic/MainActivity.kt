@@ -145,10 +145,11 @@ class MainActivity : ComponentActivity() {
 
         val micMuted = AtomicBoolean(false)
 
+        val port = 8888
         val selectorManager = SelectorManager(Dispatchers.IO)
         val serverSocket = aSocket(selectorManager)
             .udp()
-            .bind(InetSocketAddress("0.0.0.0", 8888))
+            .bind(InetSocketAddress("0.0.0.0", port))
         val isConnected = AtomicBoolean(false)
         val sampleRate = 48000
         val bufferSize = 768
@@ -181,7 +182,8 @@ class MainActivity : ComponentActivity() {
                 onMicrophoneChange = { isMuted ->
                     micMuted.set(isMuted)
                 },
-                ipAddress = ipAddressState
+                ipAddress = ipAddressState,
+                port = port.toString()
             )
         }
     }

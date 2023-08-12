@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LiveData
 
 @Composable
-fun MainUI(onMicrophoneChange: (isMuted: Boolean) -> Unit, ipAddress: LiveData<String?>) {
+fun MainUI(onMicrophoneChange: (isMuted: Boolean) -> Unit, ipAddress: LiveData<String?>, port: String) {
     Scaffold(
         topBar = { TopBar() }
     ) { innerPadding ->
@@ -47,7 +47,7 @@ fun MainUI(onMicrophoneChange: (isMuted: Boolean) -> Unit, ipAddress: LiveData<S
                 if (it.isNullOrEmpty()) {
                     return@let "Not Connected to WIFI"
                 } else {
-                    return@let it
+                    return@let "$it:$port"
                 }
             }
             Text(text = text, modifier = Modifier)
