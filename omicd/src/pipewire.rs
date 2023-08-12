@@ -9,7 +9,7 @@ use std::{io::Cursor, net::UdpSocket, sync::Arc};
 
 const BUFFER_SIZE: i32 = 96 * 8;
 
-pub struct PwContext {
+pub struct PipewireContext {
     pub socket: Arc<UdpSocket>,
 }
 
@@ -70,12 +70,12 @@ pub fn create_stream(core: &pipewire::Core) -> Result<Stream, anyhow::Error> {
 
 pub fn register_callbacks(
     stream: &Stream,
-    ctx: PwContext,
-) -> Result<StreamListener<PwContext>, anyhow::Error> {
+    ctx: PipewireContext,
+) -> Result<StreamListener<PipewireContext>, anyhow::Error> {
     Ok(stream
-        .add_local_listener_with_user_data::<PwContext>(ctx)
+        .add_local_listener_with_user_data::<PipewireContext>(ctx)
         .process(
-            |s: &StreamRef, ctx: &mut PwContext| match s.dequeue_buffer() {
+            |s: &StreamRef, ctx: &mut PipewireContext| match s.dequeue_buffer() {
                 Some(mut buffer) => process_callback(&mut buffer, ctx),
                 None => tracing::warn!("out of buffer"),
             },
@@ -83,7 +83,7 @@ pub fn register_callbacks(
         .register()?)
 }
 
-fn process_callback(buffer: &mut Buffer, ctx: &mut PwContext) {
+fn process_callback(buffer: &mut Buffer, ctx: &mut PipewireContext) {
     let data = buffer.datas_mut().first_mut().unwrap();
     let stride = std::mem::size_of::<i16>();
     let chunk = data.chunk_mut();

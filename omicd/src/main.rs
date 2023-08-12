@@ -3,7 +3,7 @@ use libspa::{flags::IoFlags, Direction};
 use omic::{
     constants::UdpSocketMessage,
     message::{Request, Response},
-    pipewire::{get_pw_params, PwContext},
+    pipewire::{get_pw_params, PipewireContext},
 };
 use pipewire::{MainLoop, Signal};
 use std::{
@@ -36,7 +36,7 @@ async fn main() -> Result<(), anyhow::Error> {
     let core = context.connect(None)?;
     let socket = Arc::new(UdpSocket::bind("0.0.0.0:0").context("couldn't bind to address")?);
     socket.set_nonblocking(true)?;
-    let ctx = PwContext {
+    let ctx = PipewireContext {
         socket: Arc::clone(&socket),
     };
 
