@@ -781,9 +781,7 @@ name = "omic"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bincode",
  "clap",
- "lazy_static",
  "omicd",
  "tracing",
  "tracing-subscriber",
@@ -794,7 +792,6 @@ name = "omic-gtk"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "bincode",
  "gtk4",
  "omicd",
  "tracing",
