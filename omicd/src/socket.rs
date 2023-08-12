@@ -1,15 +1,11 @@
 use crate::{
-    constants::UNIX_SOCKET_NAME,
+    constants::{MAX_MESSAGE_SIZE, UNIX_SOCKET_NAME},
     message::{Request, Response},
 };
 use lazy_static::lazy_static;
-use std::{
-    io::{Read, Write},
-    net::Shutdown,
-    os::unix::net::{UnixListener, UnixStream},
-    path::Path,
-};
+use std::path::Path;
 use thiserror::Error;
+use uds::{UnixSeqpacketConn, UnixSeqpacketListener};
 
 lazy_static! {
     static ref SOCKET_PATH: String = match std::env::var("XDG_RUNTIME_DIR") {
@@ -51,20 +47,17 @@ impl SocketRequestBuilder {
         self
     }
 
-    fn connect() -> Result<UnixStream, anyhow::Error> {
+    fn connect() -> Result<UnixSeqpacketConn, anyhow::Error> {
         let path = SOCKET_PATH.to_owned();
-        Ok(UnixStream::connect(path)?)
+        Ok(UnixSeqpacketConn::connect(path)?)
     }
 
     pub fn send_with_response(self) -> Result<Response, SocketError> {
-        let mut stream = Self::connect()?;
-        let buffer = bincode::serialize(&self.request.unwrap_or_default())?;
-        stream.write_all(&buffer)?;
+        let stream = Self::connect()?;
+        stream.send(&self.request.unwrap_or_default().to_bytes()?)?;
 
-        stream.shutdown(Shutdown::Write)?;
-
-        let mut buffer = Vec::new();
-        stream.read_to_end(&mut buffer)?;
+        let mut buffer = [0; MAX_MESSAGE_SIZE];
+        stream.recv(&mut buffer)?;
 
         let response = bincode::deserialize(&buffer)?;
 
@@ -72,15 +65,14 @@ impl SocketRequestBuilder {
     }
 
     pub fn send(self) -> Result<(), SocketError> {
-        let mut stream = Self::connect()?;
-        let buffer = bincode::serialize(&self.request.unwrap_or_default())?;
-        stream.write_all(&buffer)?;
+        let stream = Self::connect()?;
+        stream.send(&self.request.unwrap_or_default().to_bytes()?)?;
 
         Ok(())
     }
 }
 
-pub fn bind() -> Result<UnixListener, anyhow::Error> {
+pub fn bind() -> Result<UnixSeqpacketListener, anyhow::Error> {
     let path = SOCKET_PATH.to_owned();
 
     if Path::new(&path).exists() {
@@ -88,7 +80,7 @@ pub fn bind() -> Result<UnixListener, anyhow::Error> {
         std::fs::remove_file(&path)?;
     }
 
-    Ok(UnixListener::bind(path)?)
+    Ok(UnixSeqpacketListener::bind(path)?)
 }
 
 pub fn disconnect() -> Result<(), anyhow::Error> {

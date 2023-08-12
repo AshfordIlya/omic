@@ -1,19 +1,14 @@
 use anyhow::Context;
 use libspa::{flags::IoFlags, Direction};
 use omic::{
-    constants::UdpSocketMessage,
+    constants::{UdpSocketMessage, MAX_MESSAGE_SIZE},
     message::{Request, Response},
     pipewire::{get_pw_params, PipewireContext},
 };
 use pipewire::{MainLoop, Signal, WeakMainLoop};
-use std::{
-    io::{Read, Write},
-    mem::ManuallyDrop,
-    net::UdpSocket,
-    os::unix::net::UnixStream,
-    sync::Arc,
-};
+use std::{mem::ManuallyDrop, net::UdpSocket, sync::Arc};
 use tracing_subscriber::prelude::*;
+use uds::UnixSeqpacketConn;
 
 fn main() -> Result<(), anyhow::Error> {
     let registry =
@@ -65,10 +60,10 @@ fn main() -> Result<(), anyhow::Error> {
     let unix_socket = omic::socket::bind()?;
 
     let _io = main_loop.add_io(unix_socket, IoFlags::IN, move |unix_socket| {
-        let closure = |stream: &mut UnixStream| -> Result<(), anyhow::Error> {
-            let mut bytes = Vec::new();
-            stream.read_to_end(&mut bytes)?;
-            let message: Request = bincode::deserialize(&bytes)?;
+        let closure = |stream: &mut UnixSeqpacketConn| -> Result<(), anyhow::Error> {
+            let mut bytes = [0; MAX_MESSAGE_SIZE];
+            stream.recv(&mut bytes)?;
+            let message = Request::from_bytes(&bytes)?;
 
             match message {
                 Request::Connect { address, port } => {
@@ -91,13 +86,13 @@ fn main() -> Result<(), anyhow::Error> {
             Ok(())
         };
 
-        if let Ok((mut stream, _)) = unix_socket.accept() {
+        if let Ok((mut stream, _)) = unix_socket.accept_unix_addr() {
             let _ = match closure(&mut stream) {
-                Ok(_) => stream.write_all(&bincode::serialize(&Response::Ok).unwrap()),
+                Ok(_) => stream.send(&bincode::serialize(&Response::Ok).unwrap()),
                 Err(e) => {
-                    let error = format!("error occurred reading from unix socket: {}", e);
+                    let error = format!("error processing message: {}", e);
                     tracing::error!(error);
-                    stream.write_all(&bincode::serialize(&Response::Error(error)).unwrap())
+                    stream.send(&bincode::serialize(&Response::Error(error)).unwrap())
                 }
             };
         }
