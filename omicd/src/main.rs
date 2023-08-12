@@ -65,6 +65,7 @@ fn main() -> Result<(), anyhow::Error> {
             stream.recv(&mut bytes)?;
             let message = Request::from_bytes(&bytes)?;
 
+            // TODO: store current state
             match message {
                 Request::Connect { address, port } => {
                     tracing::info!("attempting to connect to {}:{}", address, port);
