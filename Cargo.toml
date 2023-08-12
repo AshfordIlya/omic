@@ -1,2 +1,2 @@
 [workspace]
-members = ["omic"]
+members = ["omicd", "omic-gtk", "omic"]
