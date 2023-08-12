@@ -3,7 +3,7 @@ use libspa::{flags::IoFlags, Direction};
 use omic::{
     constants::UdpSocketMessage,
     message::{Request, Response},
-    pw::{get_pw_params, PwContext},
+    pipewire::{get_pw_params, PwContext},
 };
 use pipewire::{MainLoop, Signal};
 use std::{
@@ -40,8 +40,8 @@ async fn main() -> Result<(), anyhow::Error> {
         socket: Arc::clone(&socket),
     };
 
-    let stream = omic::pw::create_stream(&core)?;
-    let _s = ManuallyDrop::new(omic::pw::register_callbacks(&stream, ctx)?);
+    let stream = omic::pipewire::create_stream(&core)?;
+    let _s = ManuallyDrop::new(omic::pipewire::register_callbacks(&stream, ctx)?);
     let unix_socket = omic::socket::bind()?;
 
     let _io = main_loop.add_io(unix_socket, IoFlags::IN, move |unix_socket| {
