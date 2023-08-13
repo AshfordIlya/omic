@@ -1,5 +1,5 @@
-use gtk::{prelude::*, Entry, ListBox};
-use gtk::{Application, ApplicationWindow, Button};
+use gtk::{prelude::*, Entry, Label};
+use gtk::{Application, ApplicationWindow, Box, Button};
 use gtk4 as gtk;
 use omic::message::Request;
 
@@ -15,23 +15,23 @@ fn main() -> Result<(), anyhow::Error> {
             .application(app)
             .title("omic")
             .default_width(350)
-            .default_height(350)
+            .default_height(150)
             .build();
 
-        let content_box = ListBox::builder()
-            .vexpand(true)
-            .hexpand(true)
-            .valign(gtk::Align::Fill)
-            .halign(gtk::Align::Fill)
-            .build();
+        let box_ = Box::new(gtk::Orientation::Vertical, 8);
 
+        let label = Label::new(Some("omic"));
         let address_text_box = Entry::new();
         let port_text_box = Entry::new();
         let button = Button::with_label("Connect");
 
-        content_box.append(&address_text_box);
-        content_box.append(&port_text_box);
-        content_box.append(&button);
+        address_text_box.set_placeholder_text(Some("Enter IP Address"));
+        port_text_box.set_placeholder_text(Some("Enter Port"));
+
+        box_.append(&label);
+        box_.append(&address_text_box);
+        box_.append(&port_text_box);
+        box_.append(&button);
 
         button.connect_clicked(move |button| {
             // TODO: handle error with popup
@@ -54,7 +54,8 @@ fn main() -> Result<(), anyhow::Error> {
             button.set_label("Disconnect");
         });
 
-        window.set_child(Some(&content_box));
+        window.set_size_request(box_.width_request(), box_.height_request());
+        window.set_child(Some(&box_));
 
         window.show();
     });
