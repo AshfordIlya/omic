@@ -35,6 +35,12 @@ impl Request {
 }
 
 impl Response {
+    pub fn to_bytes(&self) -> Result<Vec<u8>, bincode::Error> {
+        bincode::DefaultOptions::new()
+            .with_limit(MAX_MESSAGE_SIZE as u64)
+            .serialize(self)
+    }
+
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, bincode::Error> {
         bincode::DefaultOptions::new()
             .with_limit(MAX_MESSAGE_SIZE as u64)

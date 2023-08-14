@@ -89,11 +89,11 @@ fn main() -> Result<(), anyhow::Error> {
 
         if let Ok((mut stream, _)) = unix_socket.accept_unix_addr() {
             let _ = match closure(&mut stream) {
-                Ok(_) => stream.send(&bincode::serialize(&Response::Ok).unwrap()),
+                Ok(_) => stream.send(&Response::Ok.to_bytes().unwrap()),
                 Err(e) => {
                     let error = format!("error processing message: {}", e);
                     tracing::error!(error);
-                    stream.send(&bincode::serialize(&Response::Error(error)).unwrap())
+                    stream.send(&Response::Error(error).to_bytes().unwrap())
                 }
             };
         }
