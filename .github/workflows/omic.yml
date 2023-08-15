@@ -19,9 +19,12 @@ jobs:
             clang \
             llvm \
             libclang-dev \
-            pipewire \
+            libpipewire-0.3-dev \
+            libspa-0.2-dev \
             libgtk-4-dev \
-            libpango1.0-dev
+            libpango1.0-dev \
+            libspa-0.2-modules \
+            libpipewire-0.3-common
 
       - uses: actions/checkout@v3
       - uses: Accurate0/rust-toolchain@main
