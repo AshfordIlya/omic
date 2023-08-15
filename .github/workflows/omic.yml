@@ -14,7 +14,7 @@ jobs:
       image: archlinux:latest
     steps:
       - name: Install dependencies
-        run: sudo pacman -S pipewire gtk4 pango
+        run: pacman -S pipewire gtk4 pango
 
       - uses: actions/checkout@v3
       - uses: Accurate0/rust-toolchain@main
