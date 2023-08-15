@@ -9,10 +9,6 @@ on:
 
 jobs:
   build:
-    defaults:
-      run:
-        working-directory: "./omic-android"
-
     runs-on: ubuntu-latest
     steps:
       - name: Install LLVM
