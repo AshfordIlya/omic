@@ -31,7 +31,7 @@ build() {
 
 package() {
   cd $_name
-  install -m755 -d ${pkgdir}/usr/lib/systemd/usr
+  install -m755 -d ${pkgdir}/usr/lib/systemd/user
   install -m644  systemd/omicd.service $pkgdir/usr/lib/systemd/user
   find target/release-strip \
       -maxdepth 1 \
