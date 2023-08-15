@@ -30,8 +30,11 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build --no-daemon
 
+      - name: Rename APK
+        run: mv ./app/build/outputs/apk/release/app-release.apk omic.apk
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: omic-android
-          path: ./app/build/outputs/apk/release/app-release.apk
+          path: omic.apk
