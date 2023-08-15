@@ -10,9 +10,11 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
     steps:
       - name: Install dependencies
-        run: sudo apt install clang llvm libclang-dev libpipewire-0.3-dev libspa-0.2-dev libgtk-4-dev libpango1.0-dev libspa-0.2-modules
+        run: sudo pacman -S pipewire gtk4 pango
 
       - uses: actions/checkout@v3
       - uses: Accurate0/rust-toolchain@main
