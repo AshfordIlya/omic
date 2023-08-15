@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Install dependencies
-        run: pacman -Sy --noconfirm pipewire clang llvm gtk4 pango
+        run: pacman -Syu --noconfirm pipewire clang llvm gtk4 pango
 
       - uses: actions/checkout@v3
       - uses: Accurate0/rust-toolchain@main
