@@ -1,0 +1,46 @@
+name: android
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "./omic-android"
+      - ".github/workflows/android.yml"
+
+jobs:
+  build:
+    defaults:
+      run:
+        working-directory: "./omic-android"
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: Accurate0/rust-toolchain@main
+        with:
+          profile: minimal
+          toolchain: stable
+
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: cargo build
+        run: cargo build --locked --release
+
+      - name: copy artifacts
+        run: |
+          mkdir ./omic
+          cp ./target/release/omic ./omic
+          cp ./target/release/omic-gtk ./omic
+          cp ./target/release/omicd ./omic
+
+      - name: upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: omic
+          path: ./omic
