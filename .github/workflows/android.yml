@@ -28,7 +28,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew assembleRelease --no-daemon
+        run: ./gradlew assemble --no-daemon
 
       - name: Rename APK
         run: mv ./app/build/outputs/apk/release/app-release.apk omic.apk
