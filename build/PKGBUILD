@@ -2,13 +2,11 @@ pkgname=omicd-git
 _name=omic
 pkgver=1.0.0
 pkgrel=1
-pkgdesc="Cairo vector graphics library with Infinality patch support"
-arch=(i686 x86_64)
-license=('LGPL' 'MPL')
-url="http://cairographics.org/"
-groups=('infinality-remix')
+pkgdesc=""
+arch=(x86_64)
+license=('GPLv3')
+url="https://github.com/AshfordIlya/omic"
 
-# requires libGL + libEGL - all libgl variants (mesa
 depends=('pipewire' 'gtk4' 'pango')
 makedepends=('cargo' 'llvm' 'clang')
 
