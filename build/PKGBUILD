@@ -9,8 +9,8 @@ url="http://cairographics.org/"
 groups=('infinality-remix')
 
 # requires libGL + libEGL - all libgl variants (mesa
-depends=('llvm' 'clang')
-makedepends=(cargo)
+depends=('pipewire' 'gtk4' 'pango')
+makedepends=('cargo' 'llvm' 'clang')
 
 source=("git+https://github.com/AshfordIlya/omic")
 
