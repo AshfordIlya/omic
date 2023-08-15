@@ -12,9 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update
-        run: sudo apt update
+        run: sudo apt -y update
       - name: Install dependencies
-        run: sudo apt install clang llvm libclang-dev libpipewire-0.3-dev libspa-0.2-dev libgtk-4-dev libpango1.0-dev libspa-0.2-modules
+        run: |
+          sudo apt -y install \
+            clang \
+            llvm \
+            libclang-dev \
+            pipewire \
+            libgtk-4-dev \
+            libpango1.0-dev
 
       - uses: actions/checkout@v3
       - uses: Accurate0/rust-toolchain@main
