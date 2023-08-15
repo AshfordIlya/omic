@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "./omic-android"
+      - ".github/workflows/android.yml"
 
 jobs:
   build:
