@@ -11,8 +11,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Install LLVM
-        run: sudo apt install clang llvm libclang-dev
+      - name: Install dependencies
+        run: sudo apt install clang llvm libclang-dev libpipewire-0.3-dev
 
       - uses: actions/checkout@v3
       - uses: Accurate0/rust-toolchain@main

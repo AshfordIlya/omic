@@ -1,4 +1,4 @@
-pkgname=omicd
+pkgname=omicd-git
 _name=omic
 pkgver=1.0.0
 pkgrel=1
@@ -31,10 +31,11 @@ build() {
 
 package() {
   cd $_name
+  install -m755 -d ${pkgdir}/usr/lib/systemd/usr
+  install -m644  systemd/omicd.service $pkgdir/usr/lib/systemd/user
   find target/release-strip \
       -maxdepth 1 \
       -executable \
       -type f \
       -exec install -Dm0755 -t "$pkgdir/usr/bin/" {} +
-  install -m644  systemd/omic.service ${pkgdir}/usr/lib/systemd/user
 }
