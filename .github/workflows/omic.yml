@@ -36,7 +36,7 @@ jobs:
 
       - name: copy artifacts
         run: |
-          mkdir ./omic
+          mkdir ./omic-build
           cp ./target/release-strip/omic ./omic
           cp ./target/release-strip/omic-gtk ./omic
           cp ./target/release-strip/omicd ./omic
@@ -45,4 +45,4 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: omic
-          path: ./omic
+          path: ./omic-build
