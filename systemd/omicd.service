@@ -1,0 +1,12 @@
+[Unit]
+Description=omicd
+After=pipewire.service
+StartLimitIntervalSec=0
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/usr/bin/omicd
+
+[Install]
+WantedBy=multi-user.target

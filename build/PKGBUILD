@@ -1,0 +1,40 @@
+pkgname=omicd
+_name=omic
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Cairo vector graphics library with Infinality patch support"
+arch=(i686 x86_64)
+license=('LGPL' 'MPL')
+url="http://cairographics.org/"
+groups=('infinality-remix')
+
+# requires libGL + libEGL - all libgl variants (mesa
+depends=('llvm' 'clang')
+makedepends=(cargo)
+
+source=("git+https://github.com/AshfordIlya/omic")
+
+sha256sums=('SKIP')
+
+prepare() {
+  export RUSTUP_TOOLCHAIN=stable
+  cd $_name
+  cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+}
+
+build() {
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cd $_name
+  cargo build --frozen --profile release-strip --all-features
+}
+
+package() {
+  cd $_name
+  find target/release-strip \
+      -maxdepth 1 \
+      -executable \
+      -type f \
+      -exec install -Dm0755 -t "$pkgdir/usr/bin/" {} +
+  install -m644  systemd/omic.service ${pkgdir}/usr/lib/systemd/user
+}
