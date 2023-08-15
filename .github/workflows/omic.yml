@@ -33,14 +33,14 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: cargo build
-        run: cargo build --locked --release
+        run: cargo build --locked --profile release-strip
 
       - name: copy artifacts
         run: |
           mkdir ./omic
-          cp ./target/release/omic ./omic
-          cp ./target/release/omic-gtk ./omic
-          cp ./target/release/omicd ./omic
+          cp ./target/release-strip/omic ./omic
+          cp ./target/release-strip/omic-gtk ./omic
+          cp ./target/release-strip/omicd ./omic
 
       - name: upload artifact
         uses: actions/upload-artifact@v3

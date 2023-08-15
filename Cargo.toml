@@ -1,2 +1,6 @@
 [workspace]
 members = ["omicd", "omic-gtk", "omic"]
+
+[profile.release-strip]
+inherits = "release"
+strip = "symbols"
