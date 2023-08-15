@@ -1,4 +1,4 @@
-name: android
+name: omic
 on:
   workflow_dispatch:
   push:
