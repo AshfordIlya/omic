@@ -10,21 +10,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: archlinux:base-devel
+
     steps:
-      - name: Update
-        run: sudo apt -y update
       - name: Install dependencies
-        run: |
-          sudo apt -y install \
-            clang \
-            llvm \
-            libclang-dev \
-            libpipewire-0.3-dev \
-            libspa-0.2-dev \
-            libgtk-4-dev \
-            libpango1.0-dev \
-            libspa-0.2-modules \
-            libpipewire-0.3-common
+        run: pacman -Sy --noconfirm pipewire clang llvm gtk4 pango
 
       - uses: actions/checkout@v3
       - uses: Accurate0/rust-toolchain@main
