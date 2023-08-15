@@ -32,7 +32,8 @@ jobs:
 
       - name: Rename APK
         run: mv ./app/build/outputs/apk/release/app-release.apk omic.apk
-
+      - name: Rename APK
+        run: tree
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
