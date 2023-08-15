@@ -31,9 +31,11 @@ jobs:
         run: ./gradlew assemble --no-daemon
 
       - name: Rename APK
-        run: mv ./app/build/outputs/apk/release/app-release.apk omic.apk
-      - name: Rename APK
         run: tree
+
+      - name: Rename APK
+        run: mv ./app/build/outputs/apk/release/app-release.apk omic.apk
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
