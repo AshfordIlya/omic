@@ -1,34 +1,40 @@
 package com.omic.omic
 
-import android.annotation.SuppressLint
-import android.media.AudioFormat
-import android.media.AudioRecord
-import android.media.MediaRecorder
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Bundle
+import android.os.IBinder
 import android.os.PowerManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.getSystemService
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.lifecycleScope
-import io.ktor.network.selector.SelectorManager
-import io.ktor.network.sockets.BoundDatagramSocket
-import io.ktor.network.sockets.Datagram
-import io.ktor.network.sockets.InetSocketAddress
-import io.ktor.network.sockets.aSocket
-import io.ktor.utils.io.core.BytePacketBuilder
-import io.ktor.utils.io.core.writeFully
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicBoolean
 
 class MainActivity : ComponentActivity() {
+    private lateinit var microphoneService: MicrophoneService
+    private var serviceBound: MutableState<Boolean> = mutableStateOf(false)
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName, service: IBinder) {
+            val binder = service as MicrophoneService.MicrophoneBinder
+            microphoneService = binder.getService()
+            serviceBound.value = true
+        }
+
+        override fun onServiceDisconnected(arg0: ComponentName) {
+            serviceBound.value = false
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -76,65 +82,15 @@ class MainActivity : ComponentActivity() {
         return if (isWifi) cm.getIpv4Address(cm?.activeNetwork) else null
     }
 
-    private suspend fun handleDisconnectThread(
-        serverSocket: BoundDatagramSocket,
-        audioRecord: AudioRecord,
-        isConnected: AtomicBoolean
-    ) {
-        serverSocket.let {
-            while (true) {
-                val incomingDatagram = serverSocket.receive()
-                incomingDatagram.let {
-                    val incomingByte = it.packet.readByte()
-                    if (incomingByte == UdpSocketMessage.DISCONNECT.byteValue) {
-                        isConnected.set(false)
-                        audioRecord.stop()
-                    }
-                }
-            }
-        }
-    }
-
-    private suspend fun runRecordingThread(
-        serverSocket: BoundDatagramSocket,
-        audioRecord: AudioRecord,
-        buffer: ByteArray,
-        micMuted: AtomicBoolean,
-        isConnected: AtomicBoolean
-    ) {
-        serverSocket.use {
-            while (true) {
-                val datagram = serverSocket.receive()
-                val byte = datagram.packet.readByte()
-                if (byte == UdpSocketMessage.CONNECT.byteValue) {
-                    audioRecord.startRecording()
-                    isConnected.set(true)
-                }
-
-                while (isConnected.get()) {
-                    audioRecord.read(
-                        buffer,
-                        0,
-                        buffer.size,
-                        AudioRecord.READ_BLOCKING
-                    )
-
-                    if (!micMuted.get()) {
-                        val builder = BytePacketBuilder()
-                        builder.writeFully(buffer)
-                        serverSocket.send(
-                            Datagram(
-                                builder.build(),
-                                datagram.address
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     private fun onPermissionGranted() {
+        val intent = Intent(this, MicrophoneService::class.java).also {
+            bindService(
+                it,
+                connection,
+                Context.BIND_AUTO_CREATE
+            )
+        }
+
         val ipAddress = getInitialIpAddress()
         val ipAddressState = MutableLiveData(ipAddress)
         setupWifiCallbacks(ipAddressState)
@@ -143,48 +99,18 @@ class MainActivity : ComponentActivity() {
             this.window.setSustainedPerformanceMode(true)
         }
 
-        val micMuted = AtomicBoolean(false)
-
-        val port = 8888
-        val selectorManager = SelectorManager(Dispatchers.IO)
-        val serverSocket = aSocket(selectorManager)
-            .udp()
-            .bind(InetSocketAddress("0.0.0.0", port))
-        val isConnected = AtomicBoolean(false)
-        val sampleRate = 48000
-        val bufferSize = 768
-
-        @SuppressLint("MissingPermission")
-        val audioRecord = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
-            sampleRate,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            bufferSize
-        )
-
-        val buffer = ByteArray(bufferSize)
-
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                runRecordingThread(serverSocket, audioRecord, buffer, micMuted, isConnected)
-            }
-        }
-
-        lifecycleScope.launch {
-            withContext(Dispatchers.IO) {
-                handleDisconnectThread(serverSocket, audioRecord, isConnected)
-            }
-        }
+        startForegroundService(intent)
 
         setContent {
-            MainUI(
-                onMicrophoneChange = { isMuted ->
-                    micMuted.set(isMuted)
-                },
-                ipAddress = ipAddressState,
-                port = port.toString()
-            )
+            if (serviceBound.value) {
+                MainUI(
+                    onMicrophoneChange = { isMuted ->
+                        microphoneService.micMuted.set(isMuted)
+                    },
+                    ipAddress = ipAddressState,
+                    port = microphoneService.port.toString()
+                )
+            }
         }
     }
 }
