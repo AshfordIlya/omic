@@ -37,9 +37,9 @@ jobs:
       - name: copy artifacts
         run: |
           mkdir ./omic-build
-          cp ./target/release-strip/omic ./omic
-          cp ./target/release-strip/omic-gtk ./omic
-          cp ./target/release-strip/omicd ./omic
+          cp ./target/release-strip/omic ./omic-build
+          cp ./target/release-strip/omic-gtk ./omic-build
+          cp ./target/release-strip/omicd ./omic-build
 
       - name: upload artifact
         uses: actions/upload-artifact@v3
