@@ -1,5 +1,5 @@
 [workspace]
-members = ["omicd", "omic-gtk", "omic"]
+members = ["omicd", "omic"]
 
 [profile.release-strip]
 inherits = "release"
