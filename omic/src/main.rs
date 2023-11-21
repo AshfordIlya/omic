@@ -1,5 +1,5 @@
 use clap::{arg, Parser, Subcommand};
-use omic::message::{Connection, Request, Response};
+use omic::message::{Request, Response};
 
 #[derive(Parser)]
 struct Args {

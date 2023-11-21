@@ -73,7 +73,7 @@ fn main() -> Result<(), anyhow::Error> {
     };
 
     let _io = main_loop.add_io(state, IoFlags::IN, move |state| {
-        let closure = |stream: &mut UnixSeqpacketConn| -> Result<(), anyhow::Error> {
+        let closure = |stream: &mut UnixSeqpacketConn| -> Result<Response, anyhow::Error> {
             let mut bytes = [0; MAX_MESSAGE_SIZE];
             stream.recv(&mut bytes)?;
             let message = Request::from_bytes(&bytes)?;
@@ -92,6 +92,7 @@ fn main() -> Result<(), anyhow::Error> {
                     connection.status = omic::message::Status::Connected;
                     connection.address = Some(address);
                     connection.port = Some(port);
+                    Ok(Response::Ok)
                 }
                 Request::Disconnect => {
                     tracing::info!("sending disconnect signal");
@@ -100,31 +101,20 @@ fn main() -> Result<(), anyhow::Error> {
                     connection.status = omic::message::Status::Disconnected;
                     connection.address = None;
                     connection.port = None;
+                    Ok(Response::Ok)
                 }
                 // TODO: add current state query
                 Request::Status => {
                     let connection = state.connection.lock().unwrap();
-                    match connection.status {
-                        omic::message::Status::Connected => {
-                            tracing::info!(
-                                "Connected {0}:{1}",
-                                connection.address.as_ref().unwrap(),
-                                connection.port.as_ref().unwrap()
-                            );
-                        }
-                        omic::message::Status::Disconnected => tracing::info!("Disconnected"),
-                        omic::message::Status::Error => todo!(),
-                    }
+                    Ok(Response::Connection(connection.clone()))
                 }
-                Request::Noop => {}
+                Request::Noop => todo!(),
             }
-
-            Ok(())
         };
 
         if let Ok((mut stream, _)) = state.socket.accept_unix_addr() {
             let _ = match closure(&mut stream) {
-                Ok(_) => stream.send(&Response::Ok.to_bytes().unwrap()),
+                Ok(r) => stream.send(&r.to_bytes().unwrap()),
                 Err(e) => {
                     let error = format!("error processing message: {}", e);
                     tracing::error!(error);

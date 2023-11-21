@@ -59,13 +59,13 @@ pub struct State {
     pub socket: uds::UnixSeqpacketListener,
     pub connection: Mutex<Connection>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub struct Connection {
     pub status: Status,
     pub address: Option<String>,
     pub port: Option<String>,
 }
-#[derive(serde::Serialize, serde::Deserialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone)]
 pub enum Status {
     Connected,
     Disconnected,
