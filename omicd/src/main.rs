@@ -2,11 +2,15 @@ use anyhow::Context;
 use libspa::{flags::IoFlags, Direction};
 use omic::{
     constants::{UdpSocketMessage, MAX_MESSAGE_SIZE},
-    message::{Request, Response},
+    message::{Connection, Request, Response, State},
     pipewire::{get_pw_params, PipewireContext},
 };
 use pipewire::{MainLoop, Signal, WeakMainLoop};
-use std::{mem::ManuallyDrop, net::UdpSocket, sync::Arc};
+use std::{
+    mem::ManuallyDrop,
+    net::UdpSocket,
+    sync::{Arc, Mutex},
+};
 use tracing_subscriber::prelude::*;
 use uds::UnixSeqpacketConn;
 
@@ -59,7 +63,16 @@ fn main() -> Result<(), anyhow::Error> {
     let _s = ManuallyDrop::new(omic::pipewire::register_callbacks(&stream, ctx)?);
     let unix_socket = omic::socket::bind()?;
 
-    let _io = main_loop.add_io(unix_socket, IoFlags::IN, move |unix_socket| {
+    let state = State {
+        socket: unix_socket,
+        connection: Mutex::new(Connection {
+            status: omic::message::Status::Disconnected,
+            address: None,
+            port: None,
+        }),
+    };
+
+    let _io = main_loop.add_io(state, IoFlags::IN, move |state| {
         let closure = |stream: &mut UnixSeqpacketConn| -> Result<(), anyhow::Error> {
             let mut bytes = [0; MAX_MESSAGE_SIZE];
             stream.recv(&mut bytes)?;
@@ -74,20 +87,42 @@ fn main() -> Result<(), anyhow::Error> {
                     udp_socket.connect(addr)?;
                     udp_socket.send(&[UdpSocketMessage::Connect as u8])?;
                     tracing::info!("connection established, connect byte sent");
+
+                    let mut connection = state.connection.lock().unwrap();
+                    connection.status = omic::message::Status::Connected;
+                    connection.address = Some(address);
+                    connection.port = Some(port);
                 }
                 Request::Disconnect => {
                     tracing::info!("sending disconnect signal");
                     udp_socket.send(&[UdpSocketMessage::Disconnect as u8])?;
+                    let mut connection = state.connection.lock().unwrap();
+                    connection.status = omic::message::Status::Disconnected;
+                    connection.address = None;
+                    connection.port = None;
                 }
                 // TODO: add current state query
-                Request::Query => todo!(),
+                Request::Status => {
+                    let connection = state.connection.lock().unwrap();
+                    match connection.status {
+                        omic::message::Status::Connected => {
+                            tracing::info!(
+                                "Connected {0}:{1}",
+                                connection.address.as_ref().unwrap(),
+                                connection.port.as_ref().unwrap()
+                            );
+                        }
+                        omic::message::Status::Disconnected => tracing::info!("Disconnected"),
+                        omic::message::Status::Error => todo!(),
+                    }
+                }
                 Request::Noop => {}
             }
 
             Ok(())
         };
 
-        if let Ok((mut stream, _)) = unix_socket.accept_unix_addr() {
+        if let Ok((mut stream, _)) = state.socket.accept_unix_addr() {
             let _ = match closure(&mut stream) {
                 Ok(_) => stream.send(&Response::Ok.to_bytes().unwrap()),
                 Err(e) => {

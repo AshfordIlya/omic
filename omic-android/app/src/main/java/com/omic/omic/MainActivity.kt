@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.getSystemService
 import androidx.lifecycle.MutableLiveData
 
+
 class MainActivity : ComponentActivity() {
     private lateinit var microphoneService: MicrophoneService
     private var serviceBound: MutableState<Boolean> = mutableStateOf(false)
@@ -52,6 +53,13 @@ class MainActivity : ComponentActivity() {
             }
 
         requestPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (connection != null) {
+            unbindService(connection)
+        }
     }
 
     private fun setupWifiCallbacks(ipAddressState: MutableLiveData<String?>) {

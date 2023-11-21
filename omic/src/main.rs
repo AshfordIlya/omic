@@ -1,5 +1,5 @@
 use clap::{arg, Parser, Subcommand};
-use omic::message::{Request, Response};
+use omic::message::{Connection, Request, Response};
 
 #[derive(Parser)]
 struct Args {
@@ -9,14 +9,18 @@ struct Args {
 
 #[derive(Subcommand)]
 enum Command {
+    /// Connect to an omic server.
     Connect {
-        #[arg(long)]
+        /// IP Address of an omic server.
+        #[arg(long, short)]
         address: String,
-
-        #[arg(long)]
+        /// Port to connect on.
+        #[arg(long, short)]
         port: String,
     },
+    /// Disconnect from current omic server.
     Disconnect,
+    Status,
 }
 
 fn main() -> Result<(), anyhow::Error> {
@@ -26,6 +30,7 @@ fn main() -> Result<(), anyhow::Error> {
     let request = match args.command {
         Command::Connect { address, port } => Request::Connect { address, port },
         Command::Disconnect => Request::Disconnect,
+        Command::Status => Request::Status,
     };
 
     let response = omic::socket::Socket::create_request()
@@ -35,6 +40,19 @@ fn main() -> Result<(), anyhow::Error> {
     match response {
         Response::Ok => {}
         Response::Error(err) => tracing::error!(err),
+        Response::Connection(connection) => match connection.status {
+            omic::message::Status::Connected => {
+                tracing::info!(
+                    "Connected to {0}:{1}",
+                    connection.address.unwrap(),
+                    connection.port.unwrap()
+                );
+            }
+            omic::message::Status::Disconnected => {
+                tracing::info!("Not currently connected to any server.");
+            }
+            omic::message::Status::Error => todo!(),
+        },
     }
 
     // write to unix socket
