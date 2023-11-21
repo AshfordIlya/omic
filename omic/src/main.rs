@@ -20,6 +20,7 @@ enum Command {
     },
     /// Disconnect from current omic server.
     Disconnect,
+    /// Query the status of the omic server.
     Status,
 }
 
