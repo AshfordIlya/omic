@@ -15,13 +15,15 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.core.content.getSystemService
 import androidx.lifecycle.MutableLiveData
 
-
-class MainActivity : ComponentActivity() {
+class MainActivity : ComponentActivity(), ServiceCallbacks {
     private lateinit var microphoneService: MicrophoneService
+    private var isConnected: MutableLiveData<Boolean> = MutableLiveData(false)
+    private var connectionInfo: MutableLiveData<ConnectionInfo?> = MutableLiveData(null)
     private var serviceBound: MutableState<Boolean> = mutableStateOf(false)
 
     private val connection = object : ServiceConnection {
@@ -29,10 +31,13 @@ class MainActivity : ComponentActivity() {
             val binder = service as MicrophoneService.MicrophoneBinder
             microphoneService = binder.getService()
             serviceBound.value = true
+            microphoneService.callbacks = this@MainActivity
         }
+
 
         override fun onServiceDisconnected(arg0: ComponentName) {
             serviceBound.value = false
+            microphoneService.callbacks = null
         }
     }
 
@@ -57,9 +62,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        if (connection != null) {
-            unbindService(connection)
-        }
+        unbindService(connection)
     }
 
     private fun setupWifiCallbacks(ipAddressState: MutableLiveData<String?>) {
@@ -115,10 +118,22 @@ class MainActivity : ComponentActivity() {
                     onMicrophoneChange = { isMuted ->
                         microphoneService.micMuted.set(isMuted)
                     },
-                    ipAddress = ipAddressState,
-                    port = microphoneService.port.toString()
+                    ipAddress = ipAddressState.observeAsState(),
+                    port = microphoneService.port.toString(),
+                    isConnected = isConnected.observeAsState(false),
+                    connectionInfo = connectionInfo.observeAsState(),
+                    onDisconnect = { microphoneService.disconnectServer() }
                 )
             }
         }
+    }
+
+    override fun onConnect(info: ConnectionInfo) {
+        isConnected.postValue(true)
+        connectionInfo.postValue(info)
+    }
+
+    override fun onDisconnect() {
+        isConnected.postValue(false)
     }
 }

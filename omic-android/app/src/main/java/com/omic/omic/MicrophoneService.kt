@@ -16,18 +16,17 @@ import android.os.IBinder
 import android.os.Looper
 import android.os.Message
 import android.os.Process
-import android.util.Log
-import android.widget.Toast
 import androidx.core.content.getSystemService
 import io.ktor.network.selector.SelectorManager
 import io.ktor.network.sockets.Datagram
 import io.ktor.network.sockets.InetSocketAddress
 import io.ktor.network.sockets.aSocket
+import io.ktor.network.sockets.toJavaAddress
+import io.ktor.util.network.hostname
 import io.ktor.utils.io.core.BytePacketBuilder
 import io.ktor.utils.io.core.writeFully
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
@@ -51,6 +50,7 @@ class MicrophoneService : Service() {
     private val bufferSize = 768
     private val job = SupervisorJob()
     private val scope = CoroutineScope(Dispatchers.IO + job)
+    var callbacks: ServiceCallbacks? = null
 
     @SuppressLint("MissingPermission")
     private val audioRecord = AudioRecord(
@@ -72,6 +72,7 @@ class MicrophoneService : Service() {
                     if (byte == UdpSocketMessage.CONNECT.byteValue) {
                         audioRecord.startRecording()
                         isConnected.set(true)
+                        callbacks?.onConnect(ConnectionInfo(datagram.address.toJavaAddress().hostname))
 
                         scope.launch {
                             while (true) {
@@ -80,6 +81,7 @@ class MicrophoneService : Service() {
                                 if (incomingByte == UdpSocketMessage.DISCONNECT.byteValue) {
                                     isConnected.set(false)
                                     audioRecord.stop()
+                                    callbacks?.onDisconnect()
                                     break
                                 }
                             }
@@ -110,6 +112,10 @@ class MicrophoneService : Service() {
         }
     }
 
+    fun disconnectServer() {
+        isConnected.set(false)
+    }
+
     override fun onCreate() {
         HandlerThread("omic microphone", Process.THREAD_PRIORITY_URGENT_AUDIO).apply {
             start()
@@ -119,7 +125,6 @@ class MicrophoneService : Service() {
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
-        Toast.makeText(this, "service starting", Toast.LENGTH_SHORT).show()
         val channel1 = NotificationChannel(
             notificationChannelId,
             "omic microphone",
