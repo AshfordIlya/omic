@@ -152,6 +152,7 @@ fun MainUI(
                             ElevatedButton(
                                 onClick = {
                                     onDisconnect()
+
                                 },
                                 colors = ButtonDefaults.buttonColors(contentColor = MaterialTheme.colorScheme.onErrorContainer, containerColor = MaterialTheme.colorScheme.errorContainer),
                                 modifier = Modifier.padding(end = 16.dp),

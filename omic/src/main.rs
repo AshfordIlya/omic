@@ -41,19 +41,7 @@ fn main() -> Result<(), anyhow::Error> {
     match response {
         Response::Ok => {}
         Response::Error(err) => tracing::error!(err),
-        Response::Connection(connection) => match connection.status {
-            omic::message::Status::Connected => {
-                tracing::info!(
-                    "Connected to {0}:{1}",
-                    connection.address.unwrap(),
-                    connection.port.unwrap()
-                );
-            }
-            omic::message::Status::Disconnected => {
-                tracing::info!("Not currently connected to any server.");
-            }
-            omic::message::Status::Error => todo!(),
-        },
+        Response::Connection { addr } => todo!(),
     }
 
     // write to unix socket

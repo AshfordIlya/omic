@@ -1,4 +1,5 @@
 use std::{
+    net::{TcpListener, TcpStream},
     os::fd::{AsRawFd, RawFd},
     sync::Mutex,
 };
@@ -14,6 +15,7 @@ pub enum Request {
         address: String,
         port: String,
     },
+
     Disconnect,
     Status,
 }
@@ -21,8 +23,8 @@ pub enum Request {
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum Response {
     Ok,
+    Connection { addr: String },
     Error(String),
-    Connection(Connection),
 }
 
 impl Request {
@@ -57,31 +59,12 @@ impl Response {
 
 pub struct State {
     pub socket: uds::UnixSeqpacketListener,
-    pub connection: Mutex<Connection>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub struct Connection {
-    pub status: Status,
-    pub address: Option<String>,
-    pub port: Option<String>,
-}
-#[derive(serde::Serialize, serde::Deserialize, Clone)]
-pub enum Status {
-    Connected,
-    Disconnected,
-    Error,
+    pub connection: Option<TcpStream>,
+    pub port: u16,
 }
 
 impl AsRawFd for State {
     fn as_raw_fd(&self) -> RawFd {
         self.socket.as_raw_fd()
-    }
-}
-
-impl Connection {
-    pub fn to_bytes(&self) -> Result<Vec<u8>, bincode::Error> {
-        bincode::DefaultOptions::new()
-            .with_limit(MAX_MESSAGE_SIZE as u64)
-            .serialize(self)
     }
 }

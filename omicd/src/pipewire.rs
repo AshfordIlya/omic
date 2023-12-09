@@ -70,20 +70,20 @@ pub fn create_stream(core: &pipewire::Core) -> Result<Stream, anyhow::Error> {
 
 pub fn register_callbacks(
     stream: &Stream,
-    ctx: PipewireContext,
-) -> Result<StreamListener<PipewireContext>, anyhow::Error> {
+    udp: UdpSocket,
+) -> Result<StreamListener<UdpSocket>, anyhow::Error> {
     Ok(stream
-        .add_local_listener_with_user_data::<PipewireContext>(ctx)
+        .add_local_listener_with_user_data::<UdpSocket>(udp)
         .process(
-            |s: &StreamRef, ctx: &mut PipewireContext| match s.dequeue_buffer() {
-                Some(mut buffer) => process_callback(&mut buffer, ctx),
+            |s: &StreamRef, udp: &mut UdpSocket| match s.dequeue_buffer() {
+                Some(mut buffer) => process_callback(&mut buffer, udp),
                 None => tracing::warn!("out of buffer"),
             },
         )
         .register()?)
 }
 
-fn process_callback(buffer: &mut Buffer, ctx: &mut PipewireContext) {
+fn process_callback(buffer: &mut Buffer, udp: &mut UdpSocket) {
     let data = buffer.datas_mut().first_mut().unwrap();
     let stride = std::mem::size_of::<i16>();
     let chunk = data.chunk_mut();
@@ -93,7 +93,7 @@ fn process_callback(buffer: &mut Buffer, ctx: &mut PipewireContext) {
     *chunk.size_mut() = BUFFER_SIZE as u32;
 
     let data = data.data().unwrap();
-    match ctx.socket.recv(data) {
+    match udp.recv(data) {
         Ok(_len) => {}
         Err(_) => {
             data.fill(0);

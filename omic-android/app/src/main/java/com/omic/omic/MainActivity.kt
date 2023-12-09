@@ -11,6 +11,7 @@ import android.net.NetworkRequest
 import android.os.Bundle
 import android.os.IBinder
 import android.os.PowerManager
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -32,10 +33,29 @@ class MainActivity : ComponentActivity(), ServiceCallbacks {
             microphoneService = binder.getService()
             serviceBound.value = true
             microphoneService.callbacks = this@MainActivity
+             val ipAddress = getInitialIpAddress()
+        val ipAddressState = MutableLiveData(ipAddress)
+        setupWifiCallbacks(ipAddressState)
+
+        setContent {
+            if (serviceBound.value) {
+                MainUI(
+                    onMicrophoneChange = { isMuted ->
+                        microphoneService.micMuted.set(isMuted)
+                    },
+                    ipAddress = ipAddressState.observeAsState(),
+                    port = microphoneService.port.toString(),
+                    isConnected = isConnected.observeAsState(false),
+                    connectionInfo = connectionInfo.observeAsState(),
+                    onDisconnect = { this@MainActivity.onDisconnect()}
+                )
+            }
+        }
         }
 
 
         override fun onServiceDisconnected(arg0: ComponentName) {
+
             serviceBound.value = false
             microphoneService.callbacks = null
         }
@@ -61,8 +81,8 @@ class MainActivity : ComponentActivity(), ServiceCallbacks {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
         unbindService(connection)
+        super.onDestroy()
     }
 
     private fun setupWifiCallbacks(ipAddressState: MutableLiveData<String?>) {
@@ -101,31 +121,11 @@ class MainActivity : ComponentActivity(), ServiceCallbacks {
                 Context.BIND_AUTO_CREATE
             )
         }
-
-        val ipAddress = getInitialIpAddress()
-        val ipAddressState = MutableLiveData(ipAddress)
-        setupWifiCallbacks(ipAddressState)
-
+        startForegroundService(intent)
         if (this.getSystemService<PowerManager>()?.isSustainedPerformanceModeSupported == true) {
             this.window.setSustainedPerformanceMode(true)
         }
 
-        startForegroundService(intent)
-
-        setContent {
-            if (serviceBound.value) {
-                MainUI(
-                    onMicrophoneChange = { isMuted ->
-                        microphoneService.micMuted.set(isMuted)
-                    },
-                    ipAddress = ipAddressState.observeAsState(),
-                    port = microphoneService.port.toString(),
-                    isConnected = isConnected.observeAsState(false),
-                    connectionInfo = connectionInfo.observeAsState(),
-                    onDisconnect = { microphoneService.disconnectServer() }
-                )
-            }
-        }
     }
 
     override fun onConnect(info: ConnectionInfo) {
@@ -135,5 +135,6 @@ class MainActivity : ComponentActivity(), ServiceCallbacks {
 
     override fun onDisconnect() {
         isConnected.postValue(false)
+        microphoneService.disconnectServer()
     }
 }
