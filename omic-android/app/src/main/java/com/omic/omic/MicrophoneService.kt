@@ -192,7 +192,7 @@ class MicrophoneService : Service() {
         return binder
     }
 
-    override fun onDestroy() {''
+    override fun onDestroy() {
         isConnected.set(false)
         audioRecord.stop()
         serverSocket.close()
