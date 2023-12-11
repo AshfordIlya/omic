@@ -7,7 +7,7 @@ use pipewire::{
 };
 use std::{io::Cursor, net::UdpSocket, sync::Arc};
 
-const BUFFER_SIZE: i32 = 96 * 8;
+const BUFFER_SIZE: i32 = 608;
 
 pub struct PipewireContext {
     pub socket: Arc<UdpSocket>,
@@ -85,7 +85,7 @@ pub fn register_callbacks(
 
 fn process_callback(buffer: &mut Buffer, udp: &mut UdpSocket) {
     let data = buffer.datas_mut().first_mut().unwrap();
-    let stride = std::mem::size_of::<i16>();
+    let stride = std::mem::size_of::<u16>();
     let chunk = data.chunk_mut();
 
     *chunk.offset_mut() = 0;

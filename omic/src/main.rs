@@ -1,5 +1,6 @@
 use clap::{arg, Parser, Subcommand};
 use omic::message::{Request, Response};
+use tracing::{error, info};
 
 #[derive(Parser)]
 struct Args {
@@ -25,7 +26,14 @@ enum Command {
 }
 
 fn main() -> Result<(), anyhow::Error> {
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::fmt()
+        .compact()
+        .without_time()
+        .with_file(false)
+        .with_line_number(false)
+        .with_target(false)
+        .init();
+
     let args = Args::parse();
 
     let request = match args.command {
@@ -36,14 +44,14 @@ fn main() -> Result<(), anyhow::Error> {
 
     let response = omic::socket::Socket::create_request()
         .request(request)
-        .send_with_response()?;
+        .send_with_response();
 
     match response {
-        Response::Ok => {}
-        Response::Error(err) => tracing::error!(err),
-        Response::Connection { addr } => todo!(),
+        Ok(Response::Ok) => {}
+        Ok(Response::Error(err)) => error!("{}", err),
+        Ok(Response::Connection { addr }) => info!("Connected to {addr}"),
+        Err(_) => error!("Socket error, check if daemon is running."),
     }
-
     // write to unix socket
     Ok(())
 }

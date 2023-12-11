@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.sp
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun MainUI(
-    onMicrophoneChange: (isMuted: Boolean) -> Unit, ipAddress: State<String?>, port: String, isConnected: State<Boolean>, connectionInfo: State<ConnectionInfo?>,
+    onMicrophoneChange: (isMuted: Boolean) -> Unit, ipAddress: State<String?>, isConnected: State<Boolean>, connectionInfo: State<ConnectionInfo?>,
     onDisconnect: () -> Unit
 ) {
     val micMuted = remember { mutableStateOf(false) }

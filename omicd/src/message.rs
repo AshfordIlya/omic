@@ -1,20 +1,14 @@
 use std::{
-    net::{TcpListener, TcpStream},
+    net::TcpStream,
     os::fd::{AsRawFd, RawFd},
-    sync::Mutex,
 };
 
 use crate::constants::MAX_MESSAGE_SIZE;
 use bincode::Options;
 
-#[derive(serde::Serialize, serde::Deserialize, Default)]
+#[derive(serde::Serialize, serde::Deserialize)]
 pub enum Request {
-    #[default]
-    Noop,
-    Connect {
-        address: String,
-        port: String,
-    },
+    Connect { address: String, port: String },
 
     Disconnect,
     Status,

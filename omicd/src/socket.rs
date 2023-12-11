@@ -54,7 +54,7 @@ impl SocketRequestBuilder {
 
     pub fn send_with_response(self) -> Result<Response, SocketError> {
         let stream = Self::connect()?;
-        stream.send(&self.request.unwrap_or_default().to_bytes()?)?;
+        stream.send(&self.request.unwrap().to_bytes()?)?;
 
         let mut buffer = [0; MAX_MESSAGE_SIZE];
         stream.recv(&mut buffer)?;
@@ -66,7 +66,7 @@ impl SocketRequestBuilder {
 
     pub fn send(self) -> Result<(), SocketError> {
         let stream = Self::connect()?;
-        stream.send(&self.request.unwrap_or_default().to_bytes()?)?;
+        stream.send(&self.request.unwrap().to_bytes()?)?;
 
         Ok(())
     }
