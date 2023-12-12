@@ -20,7 +20,7 @@ jobs:
           java-version: "17"
           distribution: "adopt"
           cache: gradle
-      
+
       - name: Update repos
         run: sudo apt-get update -y
 
@@ -28,8 +28,8 @@ jobs:
         run: sudo apt-get install -y sdkmanager
 
       - name: Install NDK
-        run: sdkmanager "ndk-bundle"      
-      
+        run: yes | sdkmanager "ndk;26.1.10909125"
+
       - name: Install zipalign
         run: sudo apt-get install -y zipalign
 

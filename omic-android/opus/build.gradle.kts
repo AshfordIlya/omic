@@ -6,6 +6,7 @@ plugins {
 }
 
 android {
+    ndkVersion = "26.1.10909125"
     namespace = "com.omic.opus"
     compileSdk = 34
     project.tasks.preBuild.dependsOn("runNdkBuild")
