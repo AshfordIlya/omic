@@ -1,0 +1,6 @@
+[submodule "omic-android/app/src/main/jni/opus"]
+	path = omic-android/app/src/main/jni/opus
+	url = https://github.com/xiph/opus.git
+[submodule "omic-android/opus/src/main/jni/opus"]
+	path = omic-android/opus/src/main/jni/opus
+	url = https://github.com/xiph/opus.git

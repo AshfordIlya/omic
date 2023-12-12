@@ -1,4 +1,7 @@
 {
   "cSpell.words": ["omic", "pipewire", "Seqpacket"],
-  "rust-analyzer.linkedProjects": ["./omic/Cargo.toml"]
+  "rust-analyzer.linkedProjects": [
+    "./omic/Cargo.toml"
+  ],
+  "java.configuration.updateBuildConfiguration": "disabled"
 }

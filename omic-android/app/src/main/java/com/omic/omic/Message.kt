@@ -14,5 +14,5 @@ enum class MicrophoneServiceAction(val value: Int) {
 }
 
 const val NOTIFICATION_ID = 7312
-const val AUDIO_BUFFER_SIZE = 608
+const val AUDIO_BUFFER_SIZE = 566
 const val SERVER_PORT = 8888

@@ -20,6 +20,15 @@ jobs:
           java-version: "17"
           distribution: "adopt"
           cache: gradle
+      
+      - name: Update repos
+        run: apt-get update -y
+      
+      - name: Install zipalign
+        run: sudo apt-get install -y zipalign
+
+      - name: Install apksigner
+        run: sudo apt-get install -y apksigner
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -30,8 +39,17 @@ jobs:
       - name: Rename APK
         run: mv ./app/build/outputs/apk/release/app-release.apk omic.apk
 
+      - name: Decode Keystore
+        run: echo ${{secrets.KS}} | base64 --decode > keystore.jks
+
+      - name: ZipAlign
+        run: zipalign -v -p 4 omic.apk omic-aligned.apk
+
+      - name: Sign .apk
+        run: apksigner sign --ks keystore.jks --ks-key-alias "key0" --ks-pass "pass:${{secrets.PSK}}" --key-pass "pass:${{secrets.PSK}}" --out omic-signed.apk omic-aligned.apk
+
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
           name: omic-android
-          path: omic-android/omic.apk
+          path: omic-android/omic-signed.apk

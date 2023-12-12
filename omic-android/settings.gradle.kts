@@ -15,4 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "omic"
 include(":app")
- 
+include(":opus")

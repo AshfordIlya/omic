@@ -83,20 +83,47 @@ pub fn register_callbacks(
         .register()?)
 }
 
+static mut number: u32 = 0;
+
 fn process_callback(buffer: &mut Buffer, udp: &mut UdpSocket) {
-    let data = buffer.datas_mut().first_mut().unwrap();
-    let stride = std::mem::size_of::<u16>();
-    let chunk = data.chunk_mut();
-
-    *chunk.offset_mut() = 0;
-    *chunk.stride_mut() = stride as i32;
-    *chunk.size_mut() = BUFFER_SIZE as u32;
-
-    let data = data.data().unwrap();
-    match udp.recv(data) {
-        Ok(_len) => {}
-        Err(_) => {
-            data.fill(0);
+    let mut buf: [u8; 3000] = [0; 3000];
+    match udp.peek(&mut buf) {
+        Ok(usz) => {
+            let data = buffer.datas_mut().first_mut().unwrap();
+            let stride = std::mem::size_of::<i16>();
+            let chunk = data.chunk_mut();
+            *chunk.offset_mut() = 0;
+            *chunk.stride_mut() = stride as i32;
+            *chunk.size_mut() = usz as u32;
+            unsafe {
+                tracing::info!("count {} -> {}", number, usz);
+                number = 0;
+            };
+            let data = data.data().unwrap();
+            match udp.recv(data) {
+                Ok(_len) => {}
+                Err(_) => {
+                    tracing::info!("occured");
+                }
+            };
         }
-    };
+        Err(_) => {
+            let data = buffer.datas_mut().first_mut().unwrap();
+            let stride = std::mem::size_of::<i16>();
+            let chunk = data.chunk_mut();
+            *chunk.offset_mut() = 0;
+            *chunk.stride_mut() = stride as i32;
+            *chunk.size_mut() = 0;
+            unsafe {
+                number += 1;
+                tracing::info!("count {}", number);
+            };
+
+            let data = data.data().unwrap();
+            match udp.recv(data) {
+                Ok(_len) => {}
+                Err(_) => {}
+            };
+        }
+    }
 }

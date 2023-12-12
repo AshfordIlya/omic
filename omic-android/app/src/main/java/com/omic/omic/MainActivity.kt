@@ -11,12 +11,14 @@ import android.net.NetworkRequest
 import android.os.Bundle
 import android.os.IBinder
 import android.os.PowerManager
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.core.content.getSystemService
 import androidx.lifecycle.MutableLiveData
+import com.omic.opus.NativeLib
 
 class MainActivity : ComponentActivity(), ServiceCallbacks {
     private var isConnected: MutableLiveData<Boolean> = MutableLiveData(false)
@@ -30,7 +32,7 @@ class MainActivity : ComponentActivity(), ServiceCallbacks {
             val ipAddressState = MutableLiveData(ipAddress)
             setupWifiCallbacks(ipAddressState)
 
-        setContent {
+            setContent {
                 MainUI(
                     onMicrophoneChange = { isMuted ->
                         microphoneService.micMuted.set(isMuted)
@@ -49,6 +51,9 @@ class MainActivity : ComponentActivity(), ServiceCallbacks {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        val obj = NativeLib()
+        Log.i("omic", obj.encoderInit(48000, 1).toString())
+        Log.i("omic", "did?")
         super.onCreate(savedInstanceState)
 
         val requestPermissionLauncher =
@@ -117,11 +122,13 @@ class MainActivity : ComponentActivity(), ServiceCallbacks {
     }
 
     override fun onConnect(info: ConnectionInfo) {
-       isConnected.postValue(true)
-       connectionInfo.postValue(info)
+        isConnected.postValue(true)
+        connectionInfo.postValue(info)
     }
 
     override fun onDisconnect() {
         isConnected.postValue(false)
     }
+
 }
+

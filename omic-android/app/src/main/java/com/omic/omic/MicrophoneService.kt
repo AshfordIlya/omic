@@ -60,7 +60,9 @@ class MicrophoneService : Service() {
         48000,
         AudioFormat.CHANNEL_IN_MONO,
         AudioFormat.ENCODING_PCM_16BIT,
-        AUDIO_BUFFER_SIZE
+        AudioRecord.getMinBufferSize(48000,
+        AudioFormat.CHANNEL_IN_MONO,
+        AudioFormat.ENCODING_PCM_16BIT)
     )
 
     private fun startServer() {
@@ -145,7 +147,9 @@ class MicrophoneService : Service() {
         private lateinit var readChannel: ByteReadChannel
         private lateinit var writeChannel: ByteWriteChannel
         private lateinit var udpAddress: InetSocketAddress
-        val buffer = ByteArray(AUDIO_BUFFER_SIZE)
+        val buffer = ByteArray(AudioRecord.getMinBufferSize(48000,
+        AudioFormat.CHANNEL_IN_MONO,
+        AudioFormat.ENCODING_PCM_16BIT))
 
         @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
         suspend fun readSocket() {
@@ -191,16 +195,25 @@ class MicrophoneService : Service() {
 
         suspend fun sendAudio() {
             audioRecord.startRecording()
-            while (isConnected) {
-                audioRecord.read(
+             audioRecord.read(
                     buffer,
                     0,
                     buffer.size,
-                    AudioRecord.READ_BLOCKING
+                    AudioRecord.READ_NON_BLOCKING
                 )
-                if (!micMuted.get()) {
+            var read = 0
+            while (isConnected) {
+                read = audioRecord.read(
+                    buffer,
+                    0,
+                    buffer.size,
+                    AudioRecord.READ_NON_BLOCKING
+                )
+
+                if (read > 0) {
+                    Log.i("omic", "bytes sent -> $read")
                     val builder = BytePacketBuilder()
-                    builder.writeFully(buffer)
+                    builder.writeFully(buffer, 0, read)
                     udpSocket.send(
                         Datagram(
                             builder.build(),

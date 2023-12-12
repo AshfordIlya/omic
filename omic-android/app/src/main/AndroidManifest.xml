@@ -16,7 +16,8 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Omic">
+        android:theme="@style/Theme.Omic"
+        >
         <service android:name=".MicrophoneService" android:foregroundServiceType="microphone" android:stopWithTask="true" />
         <activity
             android:name=".MainActivity"
