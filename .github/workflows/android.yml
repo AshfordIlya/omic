@@ -24,8 +24,8 @@ jobs:
       - name: Update repos
         run: sudo apt-get update -y
 
-      - name: Install Android SDK
-        run: sudo apt install -y android-sdk
+      - name: Install SDK Manager (((((Android)))))
+        run: sudo apt install -y sdkmanager
 
       - name: Accept Dubious Legal Requirements
         run: yes | sdkmanager --licenses
