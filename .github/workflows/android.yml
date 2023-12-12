@@ -28,7 +28,7 @@ jobs:
         run: sudo apt install -y sdkmanager
 
       - name: Accept Dubious Legal Requirements
-        run: yes 2>/dev/null | sdkmanager --licenses || true
+        run: (while sleep 3; do echo "y"; done) | sdkmanager --licenses
       
       - name: Install zipalign
         run: sudo apt-get install -y zipalign
