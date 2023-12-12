@@ -24,11 +24,11 @@ jobs:
       - name: Update repos
         run: sudo apt-get update -y
 
-      - name: Install SDK Manager (((((Android)))))
-        run: sudo apt install -y sdkmanager
-
-      - name: Accept Dubious Legal Requirements
-        run: (while sleep 3; do echo "y"; done) | sdkmanager --licenses
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r25c
+          link-to-sdk: true
       
       - name: Install zipalign
         run: sudo apt-get install -y zipalign
