@@ -24,11 +24,11 @@ jobs:
       - name: Update repos
         run: sudo apt-get update -y
 
-      - uses: nttld/setup-ndk@v1
-        id: setup-ndk
-        with:
-          ndk-version: r25c
-          link-to-sdk: true
+      - name: Install sdkmanager
+        run: sudo apt-get install -y sdkmanager
+
+      - name: Install NDK
+        run: sdkmanager "ndk-bundle"      
       
       - name: Install zipalign
         run: sudo apt-get install -y zipalign

@@ -48,10 +48,14 @@ android {
 task<Exec>("runNdkBuild") {
     val ndkDir = android.ndkDirectory
     executable = "$ndkDir/ndk-build"
-    args(listOf("NDK_PROJECT_PATH=src/main/jni",
+    args(
+        listOf(
+            "NDK_PROJECT_PATH=src/main/jni",
             "NDK_LIBS_OUT=src/main/libs",
             "APP_BUILD_SCRIPT=src/main/jni/Android.mk",
-            "NDK_APPLICATION_MK=src/main/jni/Application.mk"))
+            "NDK_APPLICATION_MK=src/main/jni/Application.mk"
+        )
+    )
 }
 
 dependencies {
