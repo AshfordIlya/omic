@@ -8,16 +8,13 @@ use bincode::Options;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum Request {
-    Connect { address: String, port: String },
-
-    Disconnect,
     Status,
 }
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub enum Response {
-    Ok,
-    Connection { addr: String },
+    //Ok,
+    Connection { port: i32 },
     Error(String),
 }
 
@@ -53,7 +50,6 @@ impl Response {
 
 pub struct State {
     pub socket: uds::UnixSeqpacketListener,
-    pub connection: Option<TcpStream>,
     pub port: u16,
 }
 

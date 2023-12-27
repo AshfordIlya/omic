@@ -14,40 +14,20 @@ import android.os.Binder
 import android.os.IBinder
 import android.util.Log
 import androidx.core.content.getSystemService
-import io.ktor.network.selector.SelectorManager
-import io.ktor.network.sockets.BoundDatagramSocket
-import io.ktor.network.sockets.Datagram
-import io.ktor.network.sockets.InetSocketAddress
-import io.ktor.network.sockets.ServerSocket
-import io.ktor.network.sockets.Socket
-import io.ktor.network.sockets.aSocket
-import io.ktor.network.sockets.isClosed
-import io.ktor.network.sockets.openReadChannel
-import io.ktor.network.sockets.openWriteChannel
-import io.ktor.network.sockets.toJavaAddress
 import io.ktor.util.network.hostname
-import io.ktor.utils.io.ByteReadChannel
-import io.ktor.utils.io.ByteWriteChannel
-import io.ktor.utils.io.cancel
-import io.ktor.utils.io.close
-import io.ktor.utils.io.core.BytePacketBuilder
-import io.ktor.utils.io.core.writeFully
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.cancelChildren
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
+import java.io.IOException
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.DatagramPacket
+import java.net.DatagramSocket
+import java.net.InetSocketAddress
+import java.net.ServerSocket
+import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 
 class MicrophoneService : Service() {
-    private lateinit var udpSocket: BoundDatagramSocket
+    private lateinit var udpSocket: DatagramSocket
     private lateinit var tcpSocket: ServerSocket
-    private var serverScope = ServerScope()
     private lateinit var serverConnection: ServerConnection
     private lateinit var connectionCallback: ServiceCallbacks
     private lateinit var notification: Notification
@@ -60,16 +40,13 @@ class MicrophoneService : Service() {
         48000,
         AudioFormat.CHANNEL_IN_MONO,
         AudioFormat.ENCODING_PCM_16BIT,
-        AudioRecord.getMinBufferSize(48000,
-        AudioFormat.CHANNEL_IN_MONO,
-        AudioFormat.ENCODING_PCM_16BIT)
+        AudioRecord.getMinBufferSize(
+            48000,
+            AudioFormat.CHANNEL_IN_MONO,
+            AudioFormat.ENCODING_PCM_16BIT
+        )
     )
 
-    private fun startServer() {
-        serverScope.launch {
-            serverConnection.readSocket()
-        }
-    }
 
     private fun buildNotification() {
         val notificationId = "omic"
@@ -86,11 +63,13 @@ class MicrophoneService : Service() {
     }
 
     private fun bindNetworkSockets() {
-        val selectorManager = SelectorManager(Dispatchers.IO)
-        udpSocket = aSocket(selectorManager).udp().bind(InetSocketAddress("0.0.0.0", 0))
-        tcpSocket = aSocket(selectorManager).tcp().bind(InetSocketAddress("0.0.0.0", SERVER_PORT))
+        udpSocket = DatagramSocket(0)
+        tcpSocket = ServerSocket(8888)
     }
 
+    private fun startServer() {
+        serverConnection.readSocket()
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -110,7 +89,12 @@ class MicrophoneService : Service() {
                 notification,
                 FOREGROUND_SERVICE_TYPE_MICROPHONE
             )
-            startServer()
+            Log.i("omic", "began thread")
+            Thread (
+                 Runnable {
+                    startServer()
+                 }
+            ).start()
         }
         return START_STICKY
     }
@@ -133,121 +117,125 @@ class MicrophoneService : Service() {
 
     override fun onDestroy() {
         serverConnection.disconnect()
-        serverScope.coroutineContext.cancelChildren()
-        serverScope.cancel()
         tcpSocket.close()
         udpSocket.close()
         stopForeground(STOP_FOREGROUND_REMOVE)
         super.onDestroy()
     }
 
-    private inner class ServerConnection {
+    private inner class ServerConnection: Runnable {
         private var isConnected = false
         private lateinit var socket: Socket
-        private lateinit var readChannel: ByteReadChannel
-        private lateinit var writeChannel: ByteWriteChannel
+        private lateinit var readChannel: InputStream
+        private lateinit var writeChannel: OutputStream
         private lateinit var udpAddress: InetSocketAddress
-        val buffer = ByteArray(AudioRecord.getMinBufferSize(48000,
-        AudioFormat.CHANNEL_IN_MONO,
-        AudioFormat.ENCODING_PCM_16BIT))
+        val buffer = ByteArray(
+            AudioRecord.getMinBufferSize(
+                48000,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT
+            )
+        )
 
-        @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
-        suspend fun readSocket() {
+        override fun run() {
+            Log.i("omic", "run")
+            readSocket()
+        }
+
+
+
+        fun readSocket() {
             while (!tcpSocket.isClosed) {
+                 Log.i("omic", "test")
                 socket = tcpSocket.accept()
+                Log.i("omic", "Found connection")
                 isConnected = true
-                readChannel = socket.openReadChannel()
-                writeChannel = socket.openWriteChannel()
-                while (!readChannel.isClosedForRead) {
-                    var byteRead: Byte? = null
+                readChannel = socket.getInputStream()
+                writeChannel = socket.getOutputStream()
+                while (!socket.isClosed) {
+                    var byteRead = -1
                     try {
-                        byteRead = readChannel.readByte()
-                    } catch (e: ClosedReceiveChannelException) {
+                        byteRead = readChannel.read()
+                    } catch (e: IOException) {
+                        Log.i("omic", "disconnected?")
                         onDisconnect()
                     }
-                    if (byteRead != null)
+                    if (byteRead != -1)
                         when (byteRead) {
                             ClientRequests.CONNECT.byteValue -> {
+                                val msb = readChannel.read().toUInt() shl 8
+                                val lsb = readChannel.read().toUInt() + msb
+                                val port = lsb.toInt()
+                                Log.i("omic", "$port UDP")
+                                //val port = .toUShort().toUShort().toInt()
                                 udpAddress = InetSocketAddress(
-                                    socket.remoteAddress.toJavaAddress().hostname,
-                                    readChannel.readShort().toUShort().toInt()
+                                    socket.inetAddress.hostAddress,
+                                    port
                                 )
-                                serverScope.launch(newSingleThreadContext("audio thread")) { sendAudio() }
+                                Log.i("omic", "$port")
+                                Thread (
+                                    Runnable {
+                                        sendAudio()
+                                    }
+                                ).start()
+                                Log.i("omic", "connect byte")
                                 onConnect()
                             }
 
                             ClientRequests.DISCONNECT.byteValue -> {
-                                isConnected = false
-                                readChannel.cancel()
-                                writeChannel.close()
-                                socket.close()
                                 onDisconnect()
                             }
 
                             ClientRequests.HELLO.byteValue -> {
-                                writeChannel.writeByte(ClientRequests.HELLO.byteValue)
+                                writeChannel.write(ClientRequests.HELLO.byteValue)
                                 writeChannel.flush()
                             }
                         }
                 }
+                Log.i("omic", "Finished Loop")
             }
         }
 
-        suspend fun sendAudio() {
+         fun sendAudio() {
             audioRecord.startRecording()
-             audioRecord.read(
-                    buffer,
-                    0,
-                    buffer.size,
-                    AudioRecord.READ_NON_BLOCKING
-                )
+            audioRecord.read(
+                buffer,
+                0,
+                buffer.size,
+                AudioRecord.READ_NON_BLOCKING
+            )
             var read = 0
             while (isConnected) {
+//                Log.i("omic", "testing")
                 read = audioRecord.read(
                     buffer,
                     0,
                     buffer.size,
                     AudioRecord.READ_NON_BLOCKING
                 )
+               if (read > 0) {
+                    val packet = DatagramPacket(buffer, read, udpAddress)
+                   udpSocket.send(packet)
 
-                if (read > 0) {
-                    Log.i("omic", "bytes sent -> $read")
-                    val builder = BytePacketBuilder()
-                    builder.writeFully(buffer, 0, read)
-                    udpSocket.send(
-                        Datagram(
-                            builder.build(),
-                            udpAddress
-                        )
-                    )
-                }
+               }
             }
             audioRecord.stop()
         }
 
         fun disconnect() {
             if (isConnected) {
-                readChannel.cancel(ClosedReceiveChannelException(null))
+                readChannel.close()
             }
         }
 
         fun onDisconnect() {
             isConnected = false
-            writeChannel.close()
             socket.close()
             connectionCallback.onDisconnect()
         }
 
         fun onConnect() {
             connectionCallback.onConnect(ConnectionInfo(udpAddress.hostname + ":" + udpAddress.port))
-        }
-    }
-
-
-    private inner class ServerScope : CoroutineScope {
-        override val coroutineContext = Dispatchers.IO + SupervisorJob()
-        fun cancel() {
-            coroutineContext.cancel()
         }
     }
 }

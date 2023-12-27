@@ -17,6 +17,7 @@ tracing = "0.1.37"
 tracing-journald = "0.3.0"
 tracing-subscriber = "0.3.17"
 uds = "0.2.6"
+opus = "0.3.0"
 
 [lib]
 name = "omic"

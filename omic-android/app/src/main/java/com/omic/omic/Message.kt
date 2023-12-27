@@ -1,7 +1,7 @@
 package com.omic.omic
 
 // Must match Rust one
-enum class ClientRequests(val byteValue: Byte) {
+enum class ClientRequests(val byteValue: Int) {
     DISCONNECT(0),
     CONNECT(1),
     HELLO(2),
